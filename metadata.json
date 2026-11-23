@@ -1,0 +1,6 @@
+{
+  "name": "সৃজন স্টুডিও — আধুনিক ওয়েব ডিজাইন",
+  "description": "ব্যবসা, ই-কমার্স ও ব্যক্তিগত ব্র্যান্ডের জন্য দ্রুতগতির আধুনিক বাংলা ওয়েবসাইট ডিজাইন ও লাইভ প্রিভিউ স্টুডিও।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

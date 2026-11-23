@@ -1,0 +1,308 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user account record isolating PII from public marketplace views.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "photoUrl": { "type": "string", "maxLength": 200000 },
+        "role": { "type": "string", "enum": ["customer", "provider"] },
+        "preferredLanguage": { "type": "string", "enum": ["bn", "en"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "email", "role", "createdAt", "updatedAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authoritative administrator registry document.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "grantedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "ServiceCategory": {
+      "title": "ServiceCategory",
+      "description": "Bilingual service category managed by administrators.",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-z0-9_\\-]+$" },
+        "nameBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "nameEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "descriptionBn": { "type": "string", "maxLength": 240 },
+        "descriptionEn": { "type": "string", "maxLength": 240 },
+        "iconName": { "type": "string", "maxLength": 40 },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["slug", "nameBn", "nameEn", "active", "createdAt", "updatedAt"]
+    },
+    "LocationEntry": {
+      "title": "LocationEntry",
+      "description": "Admin-managed location entry complementing Bangladesh 8 divisions, 64 districts, and upazilas.",
+      "type": "object",
+      "properties": {
+        "divisionEn": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "divisionBn": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "districtEn": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "districtBn": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "upazilaEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "upazilaBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["divisionEn", "divisionBn", "districtEn", "districtBn", "upazilaEn", "upazilaBn", "active", "createdAt"]
+    },
+    "ProviderProfile": {
+      "title": "ProviderProfile",
+      "description": "Marketplace listing for local services, house rentals, or second-hand items with instant publish and admin moderation.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "listingType": { "type": "string", "enum": ["service", "house-rent", "secondhand"] },
+        "businessName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "ownerName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "categorySlug": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "categoryNameBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "categoryNameEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "customCategory": { "type": "string", "maxLength": 80 },
+        "division": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "district": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "upazila": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "serviceAreas": { "type": "array", "maxLength": 20 },
+        "tags": { "type": "array", "maxLength": 15 },
+        "specItems": { "type": "array", "maxLength": 16 },
+        "condition": { "type": "string", "maxLength": 40 },
+        "propertySpec": { "type": "string", "maxLength": 140 },
+        "addressNote": { "type": "string", "maxLength": 160 },
+        "experienceYears": { "type": "number" },
+        "bio": { "type": "string", "minLength": 10, "maxLength": 1500 },
+        "startingRate": { "type": "string", "maxLength": 60 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "whatsapp": { "type": "string", "maxLength": 30 },
+        "profilePhotoUrl": { "type": "string", "maxLength": 200000 },
+        "galleryUrls": { "type": "array", "maxLength": 8 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "suspended"] },
+        "verificationStatus": { "type": "string", "enum": ["none", "pending", "verified", "rejected"] },
+        "verificationNote": { "type": "string", "maxLength": 400 },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "businessName",
+        "ownerName",
+        "categorySlug",
+        "categoryNameBn",
+        "categoryNameEn",
+        "division",
+        "district",
+        "upazila",
+        "experienceYears",
+        "bio",
+        "status",
+        "verificationStatus",
+        "isDemo",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProviderService": {
+      "title": "ProviderService",
+      "description": "Individual service listing under a provider requiring admin approval.",
+      "type": "object",
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 5, "maxLength": 800 },
+        "priceEstimate": { "type": "string", "maxLength": 80 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["providerId", "ownerId", "title", "description", "status", "createdAt", "updatedAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer review and rating for an approved service provider.",
+      "type": "object",
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "rating": { "type": "number" },
+        "comment": { "type": "string", "minLength": 3, "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["published", "hidden"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["providerId", "authorId", "authorName", "rating", "comment", "status", "createdAt", "updatedAt"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "Customer saved favorite provider bookmark.",
+      "type": "object",
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "categoryNameBn": { "type": "string", "maxLength": 80 },
+        "categoryNameEn": { "type": "string", "maxLength": 80 },
+        "district": { "type": "string", "maxLength": 60 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["providerId", "businessName", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "User-submitted report against a provider for administrator review.",
+      "type": "object",
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "reporterId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reporterName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "reason": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "details": { "type": "string", "minLength": 5, "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["open", "reviewing", "resolved", "dismissed"] },
+        "adminNote": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["providerId", "providerName", "reporterId", "reporterName", "reason", "details", "status", "createdAt", "updatedAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Private 1-to-1 conversation metadata between a customer and a provider.",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "customerName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerOwnerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "providerPhotoUrl": { "type": "string", "maxLength": 200000 },
+        "providerRate": { "type": "string", "maxLength": 60 },
+        "providerLocation": { "type": "string", "maxLength": 140 },
+        "lastMessage": { "type": "string", "maxLength": 500 },
+        "lastSenderId": { "type": "string", "maxLength": 128 },
+        "unreadCustomerCount": { "type": "number" },
+        "unreadProviderCount": { "type": "number" },
+        "customerLastSeenAt": { "type": "string", "format": "date-time" },
+        "providerLastSeenAt": { "type": "string", "format": "date-time" },
+        "hiddenForCustomer": { "type": "boolean" },
+        "hiddenForProvider": { "type": "boolean" },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "customerId",
+        "customerName",
+        "providerId",
+        "providerOwnerId",
+        "providerName",
+        "lastMessage",
+        "unreadCustomerCount",
+        "unreadProviderCount",
+        "lastMessageAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Real-time private message inside a conversation.",
+      "type": "object",
+      "properties": {
+        "conversationId": { "type": "string", "minLength": 1, "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "customerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerOwnerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "text": { "type": "string", "maxLength": 2000 },
+        "imageUrl": { "type": "string", "maxLength": 200000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["conversationId", "customerId", "providerOwnerId", "senderId", "senderName", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Real-time user notification for messages, approvals, and verification updates.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "titleBn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "titleEn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "bodyBn": { "type": "string", "maxLength": 400 },
+        "bodyEn": { "type": "string", "maxLength": 400 },
+        "type": { "type": "string", "enum": ["message", "approval", "verification", "review", "system"] },
+        "conversationId": { "type": "string", "maxLength": 260 },
+        "providerId": { "type": "string", "maxLength": 128 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "titleBn", "titleEn", "type", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user account profiles with PII strictly restricted to owner and admins."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authoritative administrator roles."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/ServiceCategory" },
+      "description": "Publicly readable service categories managed by admins."
+    },
+    "/locations/{locationId}": {
+      "schema": { "$ref": "#/entities/LocationEntry" },
+      "description": "Publicly readable custom locations managed by admins."
+    },
+    "/providers/{providerId}": {
+      "schema": { "$ref": "#/entities/ProviderProfile" },
+      "description": "Service provider profiles; public reads restricted to approved listings."
+    },
+    "/providers/{providerId}/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/ProviderService" },
+      "description": "Services offered by a provider; public reads restricted to approved services."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Customer reviews for service providers."
+    },
+    "/users/{userId}/favorites/{providerId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "Private user favorites."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Provider abuse/misconduct reports readable by reporter and admins."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Private conversations accessible only to participants and admins."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Real-time messages inside a private conversation."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User-targeted real-time notifications."
+    }
+  }
+}

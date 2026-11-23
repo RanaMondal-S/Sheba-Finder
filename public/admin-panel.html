@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShebaFinder Admin Panel (Localhost Standalone)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      };
+    </script>
+    <style>
+      body { font-family: system-ui, -apple-system, 'Noto Sans Bengali', sans-serif; }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased dark:bg-[#090D16] dark:text-slate-100">
+    <div id="app" class="min-h-screen">
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-[#111827]">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563EB] text-sm font-bold text-white">S</span>
+            <div>
+              <h1 class="text-base font-bold tracking-tight">ShebaFinder Admin Panel</h1>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Standalone Localhost Management Console</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="themeBtn" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              Dark / Light
+            </button>
+            <div id="authUserPill" class="hidden items-center gap-2 text-xs">
+              <span id="userEmailLabel" class="font-medium text-slate-600 dark:text-slate-300"></span>
+              <button id="signOutBtn" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200">
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- file:// warning banner -->
+      <div id="fileProtocolWarn" class="mx-auto mt-4 hidden max-w-7xl px-4">
+        <div class="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p class="font-bold">Localhost HTTP Server Required for Firebase Login:</p>
+          <p class="mt-1">
+            You opened this file directly via <code class="font-mono">file://</code>. Firebase Popup Sign-In requires <code class="font-mono">http://localhost</code>. Run one of these commands in the folder containing <code class="font-mono">admin-panel.html</code>, then open <code class="font-mono">http://localhost:5500/admin-panel.html</code>:
+          </p>
+          <pre class="mt-2 rounded bg-white/80 p-2 font-mono text-[11px] dark:bg-slate-900">python3 -m http.server 5500   # or: npx serve -p 5500 .</pre>
+        </div>
+      </div>
+
+      <!-- Auth Gate -->
+      <main class="mx-auto max-w-7xl px-4 py-6">
+        <section id="loginView" class="mx-auto mt-10 max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+          <h2 class="text-xl font-bold">Admin Sign In</h2>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Sign in with authorized admin email (<span class="font-mono">swapnomoymondal2@gmail.com</span> or granted admin account).
+          </p>
+
+          <button id="googleSignInBtn" type="button" class="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1D4ED8]">
+            Sign in with Google
+          </button>
+
+          <div class="my-4 flex items-center gap-3 text-xs text-slate-400">
+            <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+            <span>or Email & Password</span>
+            <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+          </div>
+
+          <form id="emailLoginForm" class="space-y-3">
+            <input id="loginEmail" type="email" required placeholder="Admin Email" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-[#090D16]" />
+            <input id="loginPassword" type="password" required placeholder="Password" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-[#090D16]" />
+            <button type="submit" class="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+              Sign In with Email
+            </button>
+          </form>
+
+          <p id="authError" class="mt-3 hidden rounded-md bg-red-50 p-2.5 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300"></p>
+        </section>
+
+        <section id="deniedView" class="mx-auto mt-10 hidden max-w-lg rounded-lg border border-red-200 bg-white p-6 text-center dark:border-red-900 dark:bg-[#111827]">
+          <h2 class="text-lg font-bold text-red-600">Access Restricted</h2>
+          <p class="mt-2 text-xs text-slate-600 dark:text-slate-400">
+            Signed in account does not have administrator privileges in <code class="font-mono">admins/{uid}</code> or bootstrap admin email.
+          </p>
+        </section>
+
+        <!-- Admin Workspace -->
+        <section id="adminWorkspace" class="hidden space-y-5">
+          <!-- Metrics -->
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
+              <p class="text-xs text-slate-500">Total Posts</p>
+              <p id="statPosts" class="mt-1 text-2xl font-bold tabular-nums">0</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
+              <p class="text-xs text-slate-500">Services Items</p>
+              <p id="statServices" class="mt-1 text-2xl font-bold tabular-nums">0</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
+              <p class="text-xs text-slate-500">Reviews</p>
+              <p id="statReviews" class="mt-1 text-2xl font-bold tabular-nums">0</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
+              <p class="text-xs text-slate-500">Open Reports</p>
+              <p id="statReports" class="mt-1 text-2xl font-bold tabular-nums">0</p>
+            </div>
+          </div>
+
+          <!-- Toast Banner -->
+          <div id="toastBanner" class="hidden rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-medium text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200"></div>
+
+          <!-- Tabs + Search -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
+            <div id="tabsBar" class="flex flex-wrap gap-1.5">
+              <button data-tab="posts" class="tab-btn rounded-lg bg-[#2563EB] px-3.5 py-1.5 text-xs font-semibold text-white">Posts & Listings</button>
+              <button data-tab="services" class="tab-btn rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-300">Services</button>
+              <button data-tab="reviews" class="tab-btn rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-300">Reviews</button>
+              <button data-tab="reports" class="tab-btn rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-300">Reports</button>
+              <button data-tab="taxonomy" class="tab-btn rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-300">Categories & Locations</button>
+              <button data-tab="users" class="tab-btn rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-300">Users & Admins</button>
+            </div>
+
+            <input id="searchInput" type="search" placeholder="Filter current tab..." class="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-[#2563EB] focus:outline-none sm:w-64 dark:border-slate-700 dark:bg-[#111827]" />
+          </div>
+
+          <!-- Dynamic List Container -->
+          <div id="tabContent" class="space-y-3"></div>
+        </section>
+      </main>
+
+      <!-- Custom Confirmation Modal -->
+      <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
+        <div class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-[#111827]">
+          <h3 class="text-sm font-bold">Confirm Deletion</h3>
+          <p id="confirmText" class="mt-2 text-xs text-slate-600 dark:text-slate-400"></p>
+          <div class="mt-4 flex justify-end gap-2">
+            <button id="cancelDeleteBtn" type="button" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300">Cancel</button>
+            <button id="confirmDeleteBtn" type="button" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Delete Permanently</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+      import {
+        getAuth,
+        GoogleAuthProvider,
+        onAuthStateChanged,
+        signInWithEmailAndPassword,
+        signInWithPopup,
+        signOut,
+      } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+      import {
+        collection,
+        deleteDoc,
+        doc,
+        getDoc,
+        getDocs,
+        getFirestore,
+        onSnapshot,
+        serverTimestamp,
+        setDoc,
+        updateDoc,
+      } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+      const FIREBASE_CONFIG = {
+        projectId: 'gen-lang-client-0632995318',
+        appId: '1:557323302160:web:b2901aa1ba83d7ef0de195',
+        apiKey: 'AIzaSyC6PSOXqbaKl4MwAWMz0bUSDxpeuAMKXxM',
+        authDomain: 'gen-lang-client-0632995318.firebaseapp.com',
+        storageBucket: 'gen-lang-client-0632995318.firebasestorage.app',
+        messagingSenderId: '557323302160',
+      };
+      const DATABASE_ID = 'ai-studio-55bf3da2-c3ab-48fc-9727-b4b09cd9d305';
+      const BOOTSTRAP_ADMIN_EMAIL = 'swapnomoymondal2@gmail.com';
+
+      const app = initializeApp(FIREBASE_CONFIG);
+      const auth = getAuth(app);
+      const db = getFirestore(app, DATABASE_ID);
+      const googleProvider = new GoogleAuthProvider();
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+      if (window.location.protocol === 'file:') {
+        document.getElementById('fileProtocolWarn').classList.remove('hidden');
+      }
+
+      document.getElementById('themeBtn').addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+      });
+
+      const loginView = document.getElementById('loginView');
+      const deniedView = document.getElementById('deniedView');
+      const adminWorkspace = document.getElementById('adminWorkspace');
+      const authUserPill = document.getElementById('authUserPill');
+      const userEmailLabel = document.getElementById('userEmailLabel');
+      const authError = document.getElementById('authError');
+      const tabContent = document.getElementById('tabContent');
+      const searchInput = document.getElementById('searchInput');
+      const toastBanner = document.getElementById('toastBanner');
+      const confirmModal = document.getElementById('confirmModal');
+      const confirmText = document.getElementById('confirmText');
+
+      let activeTab = 'posts';
+      let currentUser = null;
+      let pendingDeleteAction = null;
+      let unsubs = [];
+
+      const state = {
+        posts: [],
+        services: [],
+        reviews: [],
+        reports: [],
+        categories: [],
+        locations: [],
+        users: [],
+        admins: [],
+      };
+
+      function showToast(msg) {
+        toastBanner.textContent = msg;
+        toastBanner.classList.remove('hidden');
+        setTimeout(() => toastBanner.classList.add('hidden'), 3200);
+      }
+
+      function esc(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function askDelete(label, actionFn) {
+        confirmText.textContent = `Are you sure you want to delete "${label}"? This action cannot be undone.`;
+        pendingDeleteAction = actionFn;
+        confirmModal.classList.remove('hidden');
+        confirmModal.classList.add('flex');
+      }
+
+      document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        pendingDeleteAction = null;
+        confirmModal.classList.add('hidden');
+        confirmModal.classList.remove('flex');
+      });
+
+      document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (pendingDeleteAction) {
+          await pendingDeleteAction();
+          pendingDeleteAction = null;
+        }
+        confirmModal.classList.add('hidden');
+        confirmModal.classList.remove('flex');
+      });
+
+      document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+        authError.classList.add('hidden');
+        try {
+          await signInWithPopup(auth, googleProvider);
+        } catch (err) {
+          authError.textContent = err.message;
+          authError.classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('emailLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        authError.classList.add('hidden');
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value;
+        try {
+          await signInWithEmailAndPassword(auth, email, pass);
+        } catch (err) {
+          authError.textContent = err.message;
+          authError.classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('signOutBtn').addEventListener('click', () => signOut(auth));
+
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeTab = btn.dataset.tab;
+          document.querySelectorAll('.tab-btn').forEach((b) => {
+            if (b.dataset.tab === activeTab) {
+              b.className = 'tab-btn rounded-lg bg-[#2563EB] px-3.5 py-1.5 text-xs font-semibold text-white';
+            } else {
+              b.className = 'tab-btn rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-300';
+            }
+          });
+          renderActiveTab();
+        });
+      });
+
+      searchInput.addEventListener('input', () => renderActiveTab());
+
+      function clearListeners() {
+        unsubs.forEach((u) => u());
+        unsubs = [];
+      }
+
+      async function loadAllServices(posts) {
+        const merged = [];
+        for (const p of posts) {
+          try {
+            const snap = await getDocs(collection(db, 'providers', p.id, 'services'));
+            snap.forEach((d) => merged.push({ id: d.id, providerId: p.id, providerName: p.businessName, ...d.data() }));
+          } catch {}
+        }
+        state.services = merged;
+        document.getElementById('statServices').textContent = String(merged.length);
+        if (activeTab === 'services') renderActiveTab();
+      }
+
+      function startListeners(isBootstrap) {
+        clearListeners();
+        unsubs.push(
+          onSnapshot(collection(db, 'providers'), (snap) => {
+            state.posts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            document.getElementById('statPosts').textContent = String(state.posts.length);
+            loadAllServices(state.posts);
+            if (activeTab === 'posts') renderActiveTab();
+          }),
+          onSnapshot(collection(db, 'reviews'), (snap) => {
+            state.reviews = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            document.getElementById('statReviews').textContent = String(state.reviews.length);
+            if (activeTab === 'reviews') renderActiveTab();
+          }),
+          onSnapshot(collection(db, 'reports'), (snap) => {
+            state.reports = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            document.getElementById('statReports').textContent = String(state.reports.filter((r) => r.status === 'open').length);
+            if (activeTab === 'reports') renderActiveTab();
+          }),
+          onSnapshot(collection(db, 'categories'), (snap) => {
+            state.categories = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            if (activeTab === 'taxonomy') renderActiveTab();
+          }),
+          onSnapshot(collection(db, 'locations'), (snap) => {
+            state.locations = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            if (activeTab === 'taxonomy') renderActiveTab();
+          })
+        );
+
+        if (isBootstrap) {
+          unsubs.push(
+            onSnapshot(collection(db, 'users'), (snap) => {
+              state.users = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+              if (activeTab === 'users') renderActiveTab();
+            }),
+            onSnapshot(collection(db, 'admins'), (snap) => {
+              state.admins = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+              if (activeTab === 'users') renderActiveTab();
+            })
+          );
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        clearListeners();
+
+        if (!user) {
+          loginView.classList.remove('hidden');
+          deniedView.classList.add('hidden');
+          adminWorkspace.classList.add('hidden');
+          authUserPill.classList.add('hidden');
+          return;
+        }
+
+        authUserPill.classList.remove('hidden');
+        authUserPill.classList.add('flex');
+        userEmailLabel.textContent = user.email || user.uid;
+
+        const isBootstrap =
+          Boolean(user.emailVerified) &&
+          user.email?.toLowerCase() === BOOTSTRAP_ADMIN_EMAIL.toLowerCase();
+
+        let hasAdminDoc = false;
+        try {
+          const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+          hasAdminDoc = adminSnap.exists();
+        } catch {}
+
+        if (!isBootstrap && !(user.emailVerified && hasAdminDoc)) {
+          loginView.classList.add('hidden');
+          adminWorkspace.classList.add('hidden');
+          deniedView.classList.remove('hidden');
+          return;
+        }
+
+        loginView.classList.add('hidden');
+        deniedView.classList.add('hidden');
+        adminWorkspace.classList.remove('hidden');
+        startListeners(isBootstrap);
+      });
+
+      function renderActiveTab() {
+        const q = searchInput.value.trim().toLowerCase();
+        tabContent.innerHTML = '';
+
+        if (activeTab === 'posts') {
+          const rows = state.posts.filter((p) =>
+            !q ||
+            `${p.businessName} ${p.ownerName} ${p.categoryNameBn} ${p.categoryNameEn} ${p.district} ${p.upazila}`
+              .toLowerCase()
+              .includes(q)
+          );
+          if (rows.length === 0) {
+            tabContent.innerHTML = '<div class="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-[#111827]">No matching posts found.</div>';
+            return;
+          }
+          rows.forEach((p) => {
+            const card = document.createElement('div');
+            card.className = 'flex flex-col justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:flex-row sm:items-center dark:border-slate-800 dark:bg-[#111827]';
+            card.innerHTML = `
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-slate-500">
+                  <span class="text-[#2563EB] uppercase">${esc(p.status)}</span> · ${esc(p.listingType || 'service')} · ${esc(p.categoryNameBn || p.categoryNameEn)} · ${esc(p.upazila)}, ${esc(p.district)}
+                  ${p.verificationStatus === 'verified' ? ' · <span class="text-emerald-600">VERIFIED</span>' : ''}
+                </p>
+                <h3 class="mt-0.5 truncate text-sm font-bold">${esc(p.businessName)}</h3>
+                <p class="text-xs text-slate-500">${esc(p.ownerName)} ${p.phone ? '· ' + esc(p.phone) : ''} ${p.startingRate ? '· ' + esc(p.startingRate) : ''}</p>
+              </div>
+              <div class="flex flex-wrap gap-1.5 shrink-0">
+                <button data-act="toggle-verify" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+                  ${p.verificationStatus === 'verified' ? 'Unverify' : 'Verify'}
+                </button>
+                <button data-act="approve" class="rounded-md bg-[#2563EB] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1D4ED8]">Approve</button>
+                <button data-act="suspend" class="rounded-md border border-amber-300 px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300">Suspend</button>
+                <button data-act="delete" class="rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Delete</button>
+              </div>
+            `;
+            card.querySelector('[data-act="toggle-verify"]').onclick = async () => {
+              const next = p.verificationStatus === 'verified' ? 'none' : 'verified';
+              await updateDoc(doc(db, 'providers', p.id), { verificationStatus: next, updatedAt: serverTimestamp() });
+              showToast(`${p.businessName}: verification -> ${next}`);
+            };
+            card.querySelector('[data-act="approve"]').onclick = async () => {
+              await updateDoc(doc(db, 'providers', p.id), { status: 'approved', updatedAt: serverTimestamp() });
+              showToast(`${p.businessName} approved`);
+            };
+            card.querySelector('[data-act="suspend"]').onclick = async () => {
+              await updateDoc(doc(db, 'providers', p.id), { status: 'suspended', updatedAt: serverTimestamp() });
+              showToast(`${p.businessName} suspended`);
+            };
+            card.querySelector('[data-act="delete"]').onclick = () =>
+              askDelete(p.businessName, async () => {
+                await deleteDoc(doc(db, 'providers', p.id));
+                showToast(`Deleted post: ${p.businessName}`);
+              });
+            tabContent.appendChild(card);
+          });
+        }
+
+        if (activeTab === 'services') {
+          const rows = state.services.filter((s) =>
+            !q || `${s.title} ${s.providerName} ${s.description}`.toLowerCase().includes(q)
+          );
+          if (rows.length === 0) {
+            tabContent.innerHTML = '<div class="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-[#111827]">No services found.</div>';
+            return;
+          }
+          rows.forEach((s) => {
+            const card = document.createElement('div');
+            card.className = 'flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]';
+            card.innerHTML = `
+              <div>
+                <p class="text-[11px] text-slate-500">${esc(s.providerName)} · ${esc(s.status)}</p>
+                <h3 class="text-sm font-bold">${esc(s.title)} ${s.priceEstimate ? '— ' + esc(s.priceEstimate) : ''}</h3>
+                <p class="text-xs text-slate-500">${esc(s.description)}</p>
+              </div>
+              <button data-act="delete" class="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Delete</button>
+            `;
+            card.querySelector('[data-act="delete"]').onclick = () =>
+              askDelete(s.title, async () => {
+                await deleteDoc(doc(db, 'providers', s.providerId, 'services', s.id));
+                state.services = state.services.filter((item) => !(item.id === s.id && item.providerId === s.providerId));
+                showToast(`Deleted service: ${s.title}`);
+                renderActiveTab();
+              });
+            tabContent.appendChild(card);
+          });
+        }
+
+        if (activeTab === 'reviews') {
+          const rows = state.reviews.filter((r) =>
+            !q || `${r.authorName} ${r.comment}`.toLowerCase().includes(q)
+          );
+          if (rows.length === 0) {
+            tabContent.innerHTML = '<div class="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-[#111827]">No reviews found.</div>';
+            return;
+          }
+          rows.forEach((r) => {
+            const card = document.createElement('div');
+            card.className = 'flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]';
+            card.innerHTML = `
+              <div>
+                <p class="text-xs font-bold">${esc(r.authorName)} · ${esc(r.rating)}/5 (${esc(r.status)})</p>
+                <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">${esc(r.comment)}</p>
+              </div>
+              <div class="flex gap-1.5">
+                <button data-act="toggle" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold dark:border-slate-700">${r.status === 'published' ? 'Hide' : 'Publish'}</button>
+                <button data-act="delete" class="rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white">Delete</button>
+              </div>
+            `;
+            card.querySelector('[data-act="toggle"]').onclick = async () => {
+              const next = r.status === 'published' ? 'hidden' : 'published';
+              await updateDoc(doc(db, 'reviews', r.id), { status: next, updatedAt: serverTimestamp() });
+              showToast(`Review marked ${next}`);
+            };
+            card.querySelector('[data-act="delete"]').onclick = () =>
+              askDelete(`Review by ${r.authorName}`, async () => {
+                await deleteDoc(doc(db, 'reviews', r.id));
+                showToast('Review deleted');
+              });
+            tabContent.appendChild(card);
+          });
+        }
+
+        if (activeTab === 'reports') {
+          const rows = state.reports.filter((rep) =>
+            !q || `${rep.providerName} ${rep.reason} ${rep.details}`.toLowerCase().includes(q)
+          );
+          if (rows.length === 0) {
+            tabContent.innerHTML = '<div class="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-[#111827]">No reports filed.</div>';
+            return;
+          }
+          rows.forEach((rep) => {
+            const card = document.createElement('div');
+            card.className = 'flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]';
+            card.innerHTML = `
+              <div>
+                <p class="text-xs font-bold">${esc(rep.providerName)} · ${esc(rep.reason)} (${esc(rep.status)})</p>
+                <p class="mt-0.5 text-xs text-slate-500">${esc(rep.details)} — ${esc(rep.reporterName)}</p>
+              </div>
+              <div class="flex gap-1.5">
+                <button data-act="resolve" class="rounded-md bg-[#2563EB] px-2.5 py-1.5 text-xs font-semibold text-white">Resolve</button>
+                <button data-act="delete" class="rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white">Delete</button>
+              </div>
+            `;
+            card.querySelector('[data-act="resolve"]').onclick = async () => {
+              await updateDoc(doc(db, 'reports', rep.id), { status: 'resolved', updatedAt: serverTimestamp() });
+              showToast('Report resolved');
+            };
+            card.querySelector('[data-act="delete"]').onclick = () =>
+              askDelete(`Report on ${rep.providerName}`, async () => {
+                await deleteDoc(doc(db, 'reports', rep.id));
+                showToast('Report deleted');
+              });
+            tabContent.appendChild(card);
+          });
+        }
+
+        if (activeTab === 'taxonomy') {
+          const wrap = document.createElement('div');
+          wrap.className = 'grid grid-cols-1 gap-4 lg:grid-cols-2';
+          wrap.innerHTML = `
+            <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
+              <h3 class="text-sm font-bold">Custom Categories (${state.categories.length})</h3>
+              <div id="catList" class="mt-3 divide-y divide-slate-100 dark:divide-slate-800"></div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
+              <h3 class="text-sm font-bold">Custom Locations (${state.locations.length})</h3>
+              <div id="locList" class="mt-3 divide-y divide-slate-100 dark:divide-slate-800"></div>
+            </div>
+          `;
+          const catList = wrap.querySelector('#catList');
+          state.categories.forEach((c) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between py-2 text-xs';
+            row.innerHTML = `<span>${esc(c.nameBn)} / ${esc(c.nameEn)} (${esc(c.slug)})</span><button class="text-red-600 font-semibold hover:underline">Delete</button>`;
+            row.querySelector('button').onclick = () =>
+              askDelete(c.nameEn || c.slug, async () => {
+                await deleteDoc(doc(db, 'categories', c.id));
+                showToast('Category deleted');
+              });
+            catList.appendChild(row);
+          });
+
+          const locList = wrap.querySelector('#locList');
+          state.locations.forEach((l) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between py-2 text-xs';
+            row.innerHTML = `<span>${esc(l.upazilaEn)}, ${esc(l.districtEn)}</span><button class="text-red-600 font-semibold hover:underline">Delete</button>`;
+            row.querySelector('button').onclick = () =>
+              askDelete(l.upazilaEn, async () => {
+                await deleteDoc(doc(db, 'locations', l.id));
+                showToast('Location deleted');
+              });
+            locList.appendChild(row);
+          });
+
+          tabContent.appendChild(wrap);
+        }
+
+        if (activeTab === 'users') {
+          const rows = state.users.filter((u) =>
+            !q || `${u.displayName} ${u.email}`.toLowerCase().includes(q)
+          );
+          if (rows.length === 0) {
+            tabContent.innerHTML = '<div class="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-[#111827]">No user records visible (Bootstrap Admin only).</div>';
+            return;
+          }
+          rows.forEach((u) => {
+            const isAdm = state.admins.some((a) => a.uid === u.uid);
+            const card = document.createElement('div');
+            card.className = 'flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]';
+            card.innerHTML = `
+              <div>
+                <p class="text-sm font-bold">${esc(u.displayName)} ${isAdm ? '<span class="text-xs text-[#2563EB]">(Admin)</span>' : ''}</p>
+                <p class="text-xs text-slate-500">${esc(u.email)}</p>
+              </div>
+              <div class="flex gap-1.5">
+                <button data-act="admin" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold dark:border-slate-700">${isAdm ? 'Revoke Admin' : 'Make Admin'}</button>
+                <button data-act="delete" class="rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white">Delete User Doc</button>
+              </div>
+            `;
+            card.querySelector('[data-act="admin"]').onclick = async () => {
+              if (isAdm) {
+                await deleteDoc(doc(db, 'admins', u.uid));
+                showToast(`Revoked admin: ${u.email}`);
+              } else {
+                await setDoc(doc(db, 'admins', u.uid), {
+                  uid: u.uid,
+                  email: u.email,
+                  grantedBy: currentUser.uid,
+                  createdAt: serverTimestamp(),
+                });
+                showToast(`Granted admin: ${u.email}`);
+              }
+            };
+            card.querySelector('[data-act="delete"]').onclick = () =>
+              askDelete(u.email, async () => {
+                await deleteDoc(doc(db, 'users', u.uid));
+                showToast(`Deleted user doc: ${u.email}`);
+              });
+            tabContent.appendChild(card);
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
